@@ -26,7 +26,7 @@ export default function LoginPage() {
         throw new Error(data?.error || "Invalid token")
       }
       // Save locally and redirect to home
-      localStorage.setItem("discord_bot_token", token)
+      localStorage.setItem("token", token)
       router.replace("/")
     } catch (err: any) {
       setError(err?.message || "Validation failed")

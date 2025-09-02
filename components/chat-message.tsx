@@ -6,15 +6,17 @@ export function ChatMessage({
   name,
   time,
   text,
+  avatarUrl,
 }: {
   name: string
   time: string
   text: string
+  avatarUrl: string
 }) {
   return (
     <article className="flex items-start gap-3">
       <Image
-        src={"/placeholder.svg?height=36&width=36&query=avatar"}
+        src={avatarUrl}
         width={36}
         height={36}
         alt={`${name} avatar`}

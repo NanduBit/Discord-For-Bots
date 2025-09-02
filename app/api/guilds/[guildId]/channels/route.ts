@@ -1,45 +1,53 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  return NextResponse.json([
-    {
-      id: "111111111111111111",
-      type: 0, // 0 = text channel
-      guild_id: "123456789012345678",
-      name: "general",
-      position: 0,
-      topic: "General discussion",
-      nsfw: false,
-      last_message_id: "987654321098765432",
-      parent_id: null,
-      rate_limit_per_user: 0,
-      permissions: "0"
-    },
-    {
-      id: "222222222222222222",
-      type: 0,
-      guild_id: "123456789012345678",
-      name: "bot-commands",
-      position: 1,
-      topic: "Commands only",
-      nsfw: false,
-      last_message_id: "987654321098765433",
-      parent_id: null,
-      rate_limit_per_user: 0,
-      permissions: "0"
-    },
-    {
-      id: "333333333333333333",
-      type: 0,
-      guild_id: "123456789012345678",
-      name: "off-topic",
-      position: 2,
-      topic: "Random stuff",
-      nsfw: false,
-      last_message_id: null,
-      parent_id: null,
-      rate_limit_per_user: 0,
-      permissions: "0"
+type Channel = {
+  id: string;
+  name: string;
+  type: number; // Discord channel type
+};
+
+export async function POST(
+  request: Request,
+  { params }: { params: { guildId: string } }
+) {
+  const { token } = await request.json();
+  const guildId = params.guildId;
+
+  if (!token) {
+    return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
+  }
+
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}/channels`,
+      {
+        headers: { Authorization: `Bot ${token}` },
+      }
+    );
+
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: "Failed to fetch channels" },
+        { status: res.status }
+      );
     }
-  ]);
+
+    const allChannels: Channel[] = await res.json();
+
+    // Only keep text-based channels (type 0 = text, 5 = announcement/news, etc.)
+    const textChannels = allChannels.filter((c) =>
+      [0, 5, 15].includes(c.type) // 15 = forum, still text-like
+    );
+
+    // Return simplified objects
+    return NextResponse.json(
+      textChannels.map((c) => ({ id: c.id, name: c.name }))
+    );
+  } catch (err: any) {
+    console.error("Channel fetch error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

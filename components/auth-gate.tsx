@@ -26,7 +26,7 @@ export default function AuthGate({ children }: Props) {
       return
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("discord_bot_token") : null
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
     if (token && token.trim().length > 0) {
       setAllowed(true)

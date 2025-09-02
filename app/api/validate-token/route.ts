@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server"
 export async function POST(req: NextRequest) {
   try {
     const { token } = await req.json()
-    const token = req.headers.get("x-bot-token");
     if (!token || typeof token !== "string") {
       return Response.json({ valid: false, error: "Missing token" }, { status: 400 })
     }

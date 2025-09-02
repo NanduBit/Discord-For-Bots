@@ -12,7 +12,14 @@ type Guild = {
 }
 
 export function ServerBar() {
-  const { data: guilds = [] } = useSWR<Guild[]>("/api/guilds", (u) => fetch(u).then((r) => r.json()))
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const postFetcher = (url: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    }).then((r) => r.json());
+  const { data: guilds = [] } = useSWR<Guild[]>("/api/guilds", postFetcher)
 
   const pathname = usePathname()
   const router = useRouter()
