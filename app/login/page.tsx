@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch("/api/validate-token", {
+      const res = await fetch("/api/utils/verify-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
