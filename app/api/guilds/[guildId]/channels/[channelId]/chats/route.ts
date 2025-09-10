@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 type Message = {
   id: string;
@@ -11,12 +11,13 @@ type Message = {
   };
 };
 
+// Using the correct Next.js 15.x App Router pattern
 export async function POST(
-  request: Request,
-  { params }: { params: { guildId: string; channelId: string } }
+  request: NextRequest,
+  context: { params: { guildId: string; channelId: string } }
 ) {
   const { token } = await request.json();
-  const { channelId } = await params;
+  const { channelId } = context.params;
 
   if (!token) {
     return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
