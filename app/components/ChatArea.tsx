@@ -4,6 +4,13 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 
 
+// Extend Window interface to allow for our dynamic mention data properties
+declare global {
+  interface Window {
+    [key: string]: any;
+  }
+}
+
 // Message interface for TypeScript type safety
 interface Author {
   id: string;
@@ -266,20 +273,6 @@ const parseDiscordMarkdown = (text: string) => {
       }
     }
     
-    // Special case handling for the specific emoji mentioned
-    if (id === '1339280967365427200') {
-      console.log('Detected specific emoji a_EVs_05copdayakuwu:1339280967365427200');
-      // For this specific emoji, we know it's animated
-      return `<img 
-        id="${elementId}"
-        src="https://cdn.discordapp.com/emojis/1339280967365427200.gif?size=48&quality=lossless" 
-        alt=":${name}:" 
-        title=":${name}:" 
-        style="width: 1.375em; height: 1.375em; vertical-align: bottom;"
-        onerror="const img = this; console.log('Error loading specific animated emoji'); img.onerror = null; if(img.src.includes('.gif')){img.src = img.src.replace('.gif','.webp');} else {img.replaceWith(document.createTextNode(':${name}:'));}"
-      />`;
-    }
-    
     // Create a more robust implementation with progressive fallbacks
     return `<img 
       id="${elementId}"
@@ -291,85 +284,8 @@ const parseDiscordMarkdown = (text: string) => {
     />`;
   });
   
-  // First handle media embeds
-
-  // Check for Tenor links - Modern format: https://tenor.com/view/something-gif-123456789
-  // Or new format: https://tenor.com/view/im-hot-gif-6106985533679880317
-  const tenorRegex = /https:\/\/tenor\.com\/view\/[\w\-%']+-gif-(\d+)/i;
-  const tenorMatch = processedText.match(tenorRegex);
-  
-  // Only process Tenor links if this is not a URL-only message
-  if (tenorMatch && processedText.trim() !== tenorMatch[0].trim()) {
-    const gifId = tenorMatch[1];
-    if (gifId) {
-      // Create a direct video embed without UI, just like Discord does
-      return `<div style="max-width: 240px; margin: 8px 0 0 0;">
-        <div style="position: relative; border-radius: 4px; overflow: hidden;">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            style="max-width: 240px; max-height: 180px; width: auto; height: auto; display: block; border-radius: 4px;"
-            poster="https://media.tenor.com/${gifId}/poster.jpg"
-          >
-            <source src="https://media.tenor.com/${gifId}/mp4.mp4" type="video/mp4">
-            Your browser does not support video playback.
-          </video>
-          <div style="position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 2px; opacity: 0.7;">
-            GIF
-          </div>
-        </div>
-        <div style="font-size: 0.75rem; margin-top: 4px;">
-          <a href="${tenorMatch[0]}" target="_blank" rel="noopener noreferrer" style="color: #96989d; text-decoration: none;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
-              <path d="M10 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H16C17.1046 20 18 19.1046 18 18V14M14 4H20M20 4V10M20 4L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Tenor
-          </a>
-        </div>
-      </div>`;
-    }
-  }
-  
-  // Check for GIPHY links
-  const giphyRegex = /https:\/\/giphy\.com\/gifs\/[\w\-%']+-\w+/i;
-  const giphyMatch = processedText.match(giphyRegex);
-  
-  // Only process GIPHY links if this is not a URL-only message
-  if (giphyMatch && processedText.trim() !== giphyMatch[0].trim()) {
-    const giphyParts = giphyMatch[0].split('-');
-    const giphyId = giphyParts[giphyParts.length - 1];
-    
-    if (giphyId) {
-      // Create a direct video embed without UI, similar to Discord style
-      return `<div style="max-width: 240px; margin: 8px 0 0 0;">
-        <div style="position: relative; border-radius: 4px; overflow: hidden;">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            style="max-width: 240px; max-height: 180px; width: auto; height: auto; display: block; border-radius: 4px;" 
-          >
-            <source src="https://media.giphy.com/media/${giphyId}/giphy.mp4" type="video/mp4">
-            Your browser does not support video playback.
-          </video>
-          <div style="position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 2px; opacity: 0.7;">
-            GIF
-          </div>
-        </div>
-        <div style="font-size: 0.75rem; margin-top: 4px;">
-          <a href="${giphyMatch[0]}" target="_blank" rel="noopener noreferrer" style="color: #96989d; text-decoration: none;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
-              <path d="M10 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H16C17.1046 20 18 19.1046 18 18V14M14 4H20M20 4V10M20 4L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            GIPHY
-          </a>
-        </div>
-      </div>`;
-    }
-  }
+  // Handle media links in a generic way
+  // We'll check for various types of media URLs and display them appropriately
   
   // Check for direct image/GIF links, but don't process if it's a URL-only message
   // This prevents duplication with embeds
@@ -426,6 +342,75 @@ const parseDiscordMarkdown = (text: string) => {
     </div>`;
   }
   
+  // Process user mentions like <@173872244924088320>
+  // Create a static cache for user mentions to avoid duplicate API calls
+  if (!window.userMentionCache) {
+    window.userMentionCache = {};
+  }
+  
+  // Process Discord user mention format <@USER_ID> or <@!USER_ID>
+  const userMentionRegex = /<@!?(\d+)>/g;
+  const pathMatch = window.location.pathname.match(/\/app\/(\d+)(?:\/(\d+))?/);
+  const guildId = pathMatch?.[1];
+  const token = localStorage.getItem("token");
+  
+  // Replace each mention with a styled username or a loading placeholder
+  processedText = processedText.replace(userMentionRegex, (match, userId) => {
+    // If we already have the username cached, use it immediately
+    if (window.userMentionCache[userId]) {
+      return `<span class="mention" style="color: #00a8fc; background-color: rgba(88, 101, 242, 0.3); border-radius: 3px; padding: 0 2px;">@${window.userMentionCache[userId]}</span>`;
+    }
+    
+    // Create a unique ID for this mention element
+    const mentionElementId = `mention-${userId}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Start with a loading state
+    setTimeout(async () => {
+      try {
+        if (guildId && token) {
+          // Use our new member find endpoint
+          const response = await fetch(`/api/guilds/${guildId}/members/find`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token, userId }),
+          });
+          
+          let username = 'Unknown User';
+          if (response.ok) {
+            const memberData = await response.json();
+            // Store username in cache - prefer nickname if available
+            username = memberData.nick || 
+                       memberData.user?.global_name || 
+                       memberData.user?.username || 
+                       'Unknown User';
+          } 
+          
+          // Store in global cache
+          window.userMentionCache[userId] = username;
+          
+          // Update all instances of this user mention
+          const mentionElements = document.querySelectorAll(`[data-user-mention-id="${userId}"]`);
+          mentionElements.forEach(element => {
+            element.innerHTML = `@${username}`;
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching member data for ${userId}:`, error);
+        // Still update with default value on error
+        window.userMentionCache[userId] = 'Unknown User';
+        const mentionElements = document.querySelectorAll(`[data-user-mention-id="${userId}"]`);
+        mentionElements.forEach(element => {
+          element.innerHTML = '@Unknown User';
+        });
+      }
+    }, 0);
+    
+    // Return a placeholder that will be updated once the data is fetched
+    return `<span class="mention" style="color: #00a8fc; background-color: rgba(88, 101, 242, 0.3); border-radius: 3px; padding: 0 2px;" id="${mentionElementId}" data-user-mention-id="${userId}">@Loading...</span>`;
+  });
+  
   // Handle standard markdown formatting
   return processedText
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
@@ -433,7 +418,7 @@ const parseDiscordMarkdown = (text: string) => {
     .replace(/\_\_([^_]+)\_\_/g, '<u>$1</u>')  // Underline
     .replace(/~~([^~]+)~~/g, '<del>$1</del>')  // Strikethrough
     .replace(/`([^`]+)`/g, '<code style="background-color:#2d2f34;padding:0 4px;border-radius:3px;font-family:monospace;">$1</code>')  // Inline code
-    .replace(/@([a-zA-Z0-9_]+)/g, '<span style="color: #00a8fc;">@$1</span>')  // Mention
+    .replace(/@([a-zA-Z0-9_]+)/g, '<span style="color: #00a8fc;">@$1</span>')  // Simple text mentions (not Discord format)
     .replace(/\n/g, '<br />') // Handle newlines
     .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #00a8fc; text-decoration: none;">$1</a>');  // URLs
 };
@@ -1557,7 +1542,7 @@ export default function ChatArea() {
                       }}>
                         @{message.referenced_message.author.username}
                       </span>
-                      {' '}{message.referenced_message.content}
+                      {' '}<span dangerouslySetInnerHTML={{ __html: parseDiscordMarkdown(message.referenced_message.content) }} />
                     </span>
                   </div>
                 </div>

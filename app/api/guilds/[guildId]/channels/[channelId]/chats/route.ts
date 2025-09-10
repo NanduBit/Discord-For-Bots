@@ -13,7 +13,7 @@ type Message = {
 
 export async function POST(
   request: Request,
-  { params }: { params: { channelId: string } }
+  { params }: { params: { guildId: string; channelId: string } }
 ) {
   const { token } = await request.json();
   const { channelId } = await params;

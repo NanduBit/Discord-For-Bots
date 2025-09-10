@@ -32,65 +32,42 @@ const channelStyles = `
   }
 `;
 
-// Default static channels data as fallback
+// Define types for channel data
+interface Channel {
+  id: string;
+  name: string;
+  type: number;
+  topic?: string | null;
+  position: number;
+  parent_id?: string | null;
+  nsfw?: boolean;
+  rate_limit_per_user?: number;
+  last_message_id?: string | null;
+  bitrate?: number;
+  user_limit?: number;
+  rtc_region?: string | null;
+  permission_overwrites?: any[];
+}
+
+interface CategoryGroup {
+  category: {
+    id: string | null;
+    name: string;
+  };
+  text_channels: Channel[];
+  voice_channels: Channel[];
+}
+
 // Helper function to truncate channel names
 const truncateChannelName = (name: string, maxLength: number = 20): string => {
   if (name.length <= maxLength) return name;
   return `${name.substring(0, maxLength)}..`;
 };
 
-const defaultChannels = [
-  {
-    category: {
-      id: null,
-      name: "No Category",
-    },
-    text_channels: [
-      {
-        id: "444444444444444444",
-        name: "minecraft-chat",
-        type: 0,
-        topic: "Talk about Minecraft",
-        position: 0,
-        parent_id: "333333333333333333",
-        nsfw: false,
-        rate_limit_per_user: 0,
-        last_message_id: "555555555555555555",
-        permission_overwrites: []
-      },
-      {
-        id: "666666666666666666",
-        name: "valorant-chat",
-        type: 0,
-        topic: null,
-        position: 1,
-        parent_id: "333333333333333333",
-        nsfw: false,
-        rate_limit_per_user: 2,
-        last_message_id: null,
-        permission_overwrites: []
-      }
-    ],
-    voice_channels: [
-      {
-        id: "777777777777777777",
-        name: "Minecraft VC",
-        type: 2,
-        position: 2,
-        parent_id: "333333333333333333",
-        bitrate: 96000,
-        user_limit: 10,
-        rtc_region: null,
-        permission_overwrites: []
-      }
-    ]
-  }
-];
-
 export default function ChannelList() {
   const [guildId, setGuildId] = useState<string>("");
   const [serverName, setServerName] = useState<string>("Bot Development");
-  const [channels, setChannels] = useState<typeof defaultChannels>([]);
+  const [channels, setChannels] = useState<CategoryGroup[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const pathname = usePathname();
@@ -317,7 +294,7 @@ export default function ChannelList() {
       ) : channels.length > 0 ? (
         // Show channels when a server is selected and channels loaded successfully
         <div>
-          {channels.map((categoryGroup) => (
+          {channels.map((categoryGroup: CategoryGroup) => (
             <div key={categoryGroup.category?.id || "no-category"}>
               <div
                 style={{
@@ -334,7 +311,7 @@ export default function ChannelList() {
               </div>
               
               {/* Text Channels */}
-              {categoryGroup.text_channels.map((channel) => (
+              {categoryGroup.text_channels.map((channel: Channel) => (
                 <a
                   key={channel.id}
                   href={`/app/${guildId}/${channel.id}`}
@@ -362,7 +339,7 @@ export default function ChannelList() {
               ))}
               
               {/* Voice Channels */}
-              {categoryGroup.voice_channels.map((channel) => (
+              {categoryGroup.voice_channels.map((channel: Channel) => (
                 <div
                   key={channel.id}
                   style={{
@@ -388,7 +365,63 @@ export default function ChannelList() {
             </div>
           ))}
         </div>
-      ) : null}
+      ) : (
+        // Show simple text message when no channels are loaded
+        <div
+          style={{
+            padding: "20px 16px",
+            color: "#f04747",
+            fontSize: "14px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "50%",
+            marginTop: "40px",
+          }}
+        >
+          <div style={{ marginBottom: "12px", fontSize: "24px" }}>⚠️</div>
+          <div>Failed to load channel list</div>
+          <button
+            onClick={() => {
+              setError("");
+              setLoading(true);
+              const token = localStorage.getItem("token") || "";
+              fetch(`/api/guilds/${guildId}/channels`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+              })
+                .then(res => {
+                  if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+                  return res.json();
+                })
+                .then(data => {
+                  setChannels(data);
+                  setLoading(false);
+                })
+                .catch(err => {
+                  setError(`Failed to load channels: ${err.message}`);
+                  setLoading(false);
+                });
+            }}
+            style={{
+              marginTop: "16px",
+              padding: "8px 16px",
+              background: "#5865f2",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
     </div>
   );
 }

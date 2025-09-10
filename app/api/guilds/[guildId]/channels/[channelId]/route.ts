@@ -34,7 +34,7 @@ export async function POST(
   { params }: { params: { guildId: string; channelId: string } }
 ) {
   const { token } = await request.json();
-  const { guildId, channelId } = params;
+  const { guildId, channelId } = await params;
 
   if (!token) {
     return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
