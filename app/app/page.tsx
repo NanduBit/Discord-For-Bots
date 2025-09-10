@@ -4,7 +4,6 @@ import ServerList from '../components/ServerList';
 import ChannelList from '../components/ChannelList';
 import ChatArea from '../components/ChatArea';
 import MemberList from '../components/MemberList';
-import { useEffect } from 'react';
 
 export default function Discord() {
 

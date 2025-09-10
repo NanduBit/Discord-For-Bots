@@ -24,7 +24,7 @@ export default function ServerList() {
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem("token");
           
-          // Simple fetch without retry since server handles caching
+          // Fetch servers with retry logic for rate limits
           const response = await fetch("/api/guilds", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -32,6 +32,18 @@ export default function ServerList() {
           });
           
           if (!response.ok) {
+            // Handle rate limiting specially
+            if (response.status === 429) {
+              const data = await response.json();
+              const retryAfter = data.retryAfter ? parseInt(data.retryAfter) * 1000 : 5000;
+              
+              console.log(`Rate limited by Discord API. Retrying in ${retryAfter/1000} seconds...`);
+              
+              // Set a timer to retry after the specified delay
+              setTimeout(fetchServers, retryAfter);
+              return;
+            }
+            
             console.error(`Error fetching servers: ${response.status}`);
             setServers([]);
             return;
@@ -108,7 +120,7 @@ export default function ServerList() {
                 cursor: "pointer",
               }}
             >
-              <Image src="/next.svg" alt="Home" width={24} height={24} />
+              <Image src="/home.png" alt="Home" width={24} height={24} />
             </div>
           </Link>
         </div>

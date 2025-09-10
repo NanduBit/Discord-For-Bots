@@ -5,7 +5,7 @@ export async function POST(
   { params }: { params: { channelId: string } }
 ) {
   const { token, content } = await request.json();
-  const { channelId } = params;
+  const { channelId } = await params;
 
   if (!token || !content) {
     return NextResponse.json(

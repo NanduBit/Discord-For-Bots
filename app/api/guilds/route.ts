@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 
-// Simple in-memory cache
-let guildsCache: any = null;
-let cacheTimestamp: number = 0;
+// Advanced in-memory cache with support for multiple tokens
+interface CacheEntry {
+  token: string;      // The token this cache entry is for
+  guilds: any[];      // The cached guild data
+  expiresAt: number;  // Timestamp when this cache entry expires
+}
+
 const CACHE_TTL = 60 * 1000; // 1 minute cache
+let guildsCache: CacheEntry[] = [];
+
+// Function to clean up expired cache entries
+function cleanupExpiredCache() {
+  const now = Date.now();
+  const initialCount = guildsCache.length;
+  guildsCache = guildsCache.filter(entry => entry.expiresAt > now);
+  
+  if (initialCount !== guildsCache.length) {
+    console.log(`Cleaned up ${initialCount - guildsCache.length} expired cache entries. Remaining: ${guildsCache.length}`);
+  }
+}
 
 export async function POST(request: Request) {
   const { token } = await request.json();
@@ -11,12 +27,19 @@ export async function POST(request: Request) {
   if (!token) {
     return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
   }
+  
+  // Clean up expired cache entries on each request
+  cleanupExpiredCache();
 
-  // Return from cache if available and not expired
+  // Clean up expired cache entries
   const now = Date.now();
-  if (guildsCache && (now - cacheTimestamp < CACHE_TTL)) {
-    console.log("Returning guilds from cache");
-    return NextResponse.json(guildsCache);
+  guildsCache = guildsCache.filter(entry => entry.expiresAt > now);
+  
+  // Check if we have a valid cache entry for this token
+  const cacheEntry = guildsCache.find(entry => entry.token === token);
+  if (cacheEntry) {
+    console.log("Returning guilds from cache for token");
+    return NextResponse.json(cacheEntry.guilds);
   }
 
   try {
@@ -70,9 +93,16 @@ export async function POST(request: Request) {
         : '/defaultServerIcon.png', // Use absolute path with leading slash
     }));
 
-    // Update cache
-    guildsCache = guildsWithIconUrl;
-    cacheTimestamp = now;
+    // Add or update cache entry for this token
+    const newCacheEntry: CacheEntry = {
+      token,
+      guilds: guildsWithIconUrl,
+      expiresAt: now + CACHE_TTL
+    };
+    
+    // Remove any existing entry for this token before adding the new one
+    guildsCache = guildsCache.filter(entry => entry.token !== token);
+    guildsCache.push(newCacheEntry);
 
     return NextResponse.json(guildsWithIconUrl, { headers });
   } catch (err: any) {

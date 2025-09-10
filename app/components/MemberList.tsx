@@ -5,26 +5,8 @@ import Image from "next/image";
 const members = {
   roles: [
     {
-      id: 1,
-      name: "Admin",
-      color: "#e91e63",
-      members: [
-        { id: 1, name: "CopilotBot", status: "online", avatar: "/next.svg" },
-        { id: 2, name: "ServerMaster", status: "online", avatar: "/vercel.svg" }
-      ]
-    },
-    {
-      id: 2,
-      name: "Moderator",
-      color: "#42a5f5",
-      members: [
-        { id: 3, name: "ChatMod", status: "idle", avatar: "/globe.svg" },
-        { id: 4, name: "BotHelper", status: "online", avatar: "/window.svg" }
-      ]
-    },
-    {
       id: 3,
-      name: "Members",
+      name: "Work In Progress",
       color: "#7289da",
       members: [
         { id: 5, name: "ActiveUser", status: "online", avatar: "/file.svg" },

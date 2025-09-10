@@ -16,7 +16,7 @@ export async function POST(
   { params }: { params: { channelId: string } }
 ) {
   const { token } = await request.json();
-  const channelId = params.channelId;
+  const { channelId } = await params;
 
   if (!token) {
     return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
@@ -40,16 +40,7 @@ export async function POST(
     const messages: Message[] = await res.json();
 
     // Simplify return data (strip unnecessary fields)
-    const simplified = messages.map((m) => ({
-      id: m.id,
-      content: m.content,
-      author: {
-        id: m.author.id,
-        username: m.author.username,
-        discriminator: m.author.discriminator,
-        avatar: m.author.avatar,
-      },
-    })).reverse();
+    const simplified = messages.reverse();
 
     return NextResponse.json(simplified);
   } catch (err: any) {
