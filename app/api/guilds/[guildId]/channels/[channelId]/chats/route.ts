@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-// Use the native Response object which is supported by Next.js 15.x
+import { NextResponse } from "next/server";
 
 type Message = {
   id: string;
@@ -12,20 +12,16 @@ type Message = {
   };
 };
 
-// Define runtime and dynamic behavior
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
+// Define the correct parameter types for Next.js 15.x
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ guildId: string; channelId: string }> }
-): Promise<Response> {
+  { params }: { params: { guildId: string; channelId: string } }
+) {
   const { token } = await request.json();
-  const params = await context.params;
-  const { channelId } = params;
+  const { channelId } = await params;
 
   if (!token) {
-    return Response.json({ error: "Missing bot token" }, { status: 400 });
+    return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
   }
 
   try {
@@ -37,7 +33,7 @@ export async function POST(
     );
 
     if (!res.ok) {
-      return Response.json(
+      return NextResponse.json(
         { error: "Failed to fetch messages" },
         { status: res.status }
       );
@@ -48,10 +44,10 @@ export async function POST(
     // Simplify return data (strip unnecessary fields)
     const simplified = messages.reverse();
 
-    return Response.json(simplified);
+    return NextResponse.json(simplified);
   } catch (err: any) {
     console.error("Messages fetch error:", err);
-    return Response.json(
+    return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
