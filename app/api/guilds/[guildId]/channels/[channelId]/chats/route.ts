@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 type Message = {
   id: string;
@@ -11,13 +12,17 @@ type Message = {
   };
 };
 
-// Using the correct Next.js 15.x App Router pattern
+// Define the correct parameter types for Next.js 15.x
+// Define runtime and dynamic behavior
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
-  context: { params: { guildId: string; channelId: string } }
-) {
+  { params }: { params: { guildId: string; channelId: string } }
+): Promise<NextResponse> {
   const { token } = await request.json();
-  const { channelId } = context.params;
+  const { channelId } = params;
 
   if (!token) {
     return NextResponse.json({ error: "Missing bot token" }, { status: 400 });
