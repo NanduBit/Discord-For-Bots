@@ -25,9 +25,9 @@ export default function LoginPage() {
       if (!res.ok || !data?.valid) {
         throw new Error(data?.error || "Invalid token")
       }
-      // Save locally and redirect to home
+      // Save locally and redirect to app
       localStorage.setItem("token", token)
-      router.replace("/")
+      router.replace("/app")
     } catch (err: any) {
       setError(err?.message || "Validation failed")
     } finally {

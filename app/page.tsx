@@ -1,7 +1,19 @@
-// app/page.tsx (Next.js 13+ with App Router)
+"use client"; // Need client directive for localStorage access
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if token exists, if so redirect to app
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.push("/app");
+    }
+  }, [router]);
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white relative overflow-hidden">
       {/* Background Glow */}
@@ -20,6 +32,12 @@ export default function Home() {
             Go to App
           </button>
         </Link>
+        
+        <div className="mt-4">
+          <Link href="/login" className="text-purple-400 hover:text-purple-300 underline">
+            Login with Bot Token
+          </Link>
+        </div>
       </div>
     </main>
   );
