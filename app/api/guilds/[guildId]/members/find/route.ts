@@ -31,7 +31,7 @@ function cleanCache() {
 // POST: Find a specific guild member by user ID
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string}> }
 ) {
   try {
     const { token, userId } = await request.json();
@@ -148,10 +148,11 @@ export async function POST(
 // GET method for search compatibility, but POST is preferred
 export async function GET(
   request: Request,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
+  const { guildId } = await params;
   
   if (!userId) {
     return NextResponse.json({ 
@@ -161,7 +162,7 @@ export async function GET(
   }
   
   return NextResponse.json({ 
-    message: `For security reasons, please use POST method to fetch member ${userId} for guild ${params.guildId}`,
+    message: `For security reasons, please use POST method to fetch member ${userId} for guild ${guildId}`,
     hint: "Send a POST request with the bot token in the request body"
   });
 }

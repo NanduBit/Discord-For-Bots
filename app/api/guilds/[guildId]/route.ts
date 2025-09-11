@@ -28,7 +28,7 @@ function cleanCache() {
 }
 
 
-export async function POST(request: Request, { params }: { params: { guildId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ guildId: string }> }) {
   try {
     const { token } = await request.json();
     const { guildId } = await params;

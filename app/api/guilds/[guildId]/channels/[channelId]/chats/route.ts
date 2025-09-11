@@ -15,7 +15,7 @@ type Message = {
 // Define the correct parameter types for Next.js 15.x
 export async function POST(
   request: NextRequest,
-  { params }: { params: { guildId: string; channelId: string } }
+  { params }: { params: Promise<{ guildId: string; channelId: string }> }
 ) {
   const { token } = await request.json();
   const { channelId } = await params;

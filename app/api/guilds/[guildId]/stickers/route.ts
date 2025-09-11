@@ -29,7 +29,7 @@ function cleanCache() {
 
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
   try {
     const { guildId } = await params;

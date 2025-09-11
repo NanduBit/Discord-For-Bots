@@ -31,7 +31,7 @@ type Channel = {
 
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string; channelId: string } }
+  { params }: { params: Promise<{ guildId: string; channelId: string }> }
 ) {
   const { token } = await request.json();
   const { guildId, channelId } = await params;

@@ -30,7 +30,7 @@ function cleanCache() {
 
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string; emojiId: string } }
+  { params }: { params: Promise<{ guildId: string; emojiId: string }> }
 ) {
   try {
     const { token } = await request.json();

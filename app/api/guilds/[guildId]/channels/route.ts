@@ -29,7 +29,7 @@ type Channel = {
 
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
   const { token } = await request.json();
   const { guildId } = await params;

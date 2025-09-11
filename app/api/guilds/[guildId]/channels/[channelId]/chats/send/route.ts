@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
-  { params }: { params: { guildId: string; channelId: string } }
+  { params }: { params: Promise<{ guildId: string; channelId: string }> }
 ) {
   const { token, content } = await request.json();
   const { channelId } = await params;

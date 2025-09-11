@@ -28,7 +28,7 @@ function cleanCache() {
 }
 
 // POST: list members in a guild (using POST to securely pass the token in the request body)
-export async function POST(request: Request, { params }: { params: { guildId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ guildId: string }> }) {
   try {
     const { token, limit = 1000 } = await request.json();
     const { guildId } = await params;
@@ -124,10 +124,4 @@ export async function POST(request: Request, { params }: { params: { guildId: st
   }
 }
 
-// Keeping GET for backward compatibility, but recommend using POST
-export async function GET(req: NextRequest, { params }: { params: { guildId: string } }) {
-  return NextResponse.json({ 
-    message: `For security reasons, please use POST method to fetch members for guild ${params.guildId}`,
-    hint: "Send a POST request with the bot token in the request body"
-  });
-}
+
