@@ -26,7 +26,7 @@ export async function POST(
 
   try {
     const res = await fetch(
-      `https://discord.com/api/v10/channels/${channelId}/messages?limit=30`,
+      `https://discord.com/api/v10/channels/${channelId}/messages?limit=50`,
       {
         headers: { Authorization: `Bot ${token}` },
       }

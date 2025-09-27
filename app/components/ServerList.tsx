@@ -2,124 +2,55 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { memo, useCallback } from "react";
+import { useDiscordContext } from "../context/DiscordContext";
 
-// CSS will be applied using inline styles
-
-// Define server interface
-interface Server {
-  id: string;
-  name: string;
-  iconUrl: string;
-}
-
-export default function ServerList() {
-  const [servers, setServers] = useState<Server[]>([]);
-  const [activeServerId, setActiveServerId] = useState<string>("");
+export default memo(function ServerList() {
+  const { servers, activeServerId } = useDiscordContext();
   
-  useEffect(() => {
-    const fetchServers = async () => {
-      try {
-        // Only run this in the browser
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem("token");
-          
-          // Fetch servers with retry logic for rate limits
-          const response = await fetch("/api/guilds", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
-          });
-          
-          if (!response.ok) {
-            // Handle rate limiting specially
-            if (response.status === 429) {
-              const data = await response.json();
-              const retryAfter = data.retryAfter ? parseInt(data.retryAfter) * 1000 : 5000;
-              
-              console.log(`Rate limited by Discord API. Retrying in ${retryAfter/1000} seconds...`);
-              
-              // Set a timer to retry after the specified delay
-              setTimeout(fetchServers, retryAfter);
-              return;
-            }
-            
-            console.error(`Error fetching servers: ${response.status}`);
-            setServers([]);
-            return;
-          }
-          
-          const data = await response.json();
-          
-          // Make sure data is an array before setting it
-          if (Array.isArray(data)) {
-            setServers(data);
-          } else if (data && data.error) {
-            console.error(`API error: ${data.error}`);
-            setServers([]);
-          } else {
-            console.error('Unexpected API response format');
-            setServers([]);
-          }
-        }
-      } catch (e) {
-        console.error("Error fetching servers:", e);
-        setServers([]);
-      }
-    };
-    
-    fetchServers();
-    
-    // Extract server ID from URL to determine active server
-    const path = window.location.pathname;
-    const match = path.match(/\/app\/([^\/]+)/);
-    if (match && match[1]) {
-      setActiveServerId(match[1]);
-    }
-  }, []);
+  // Log render for debugging
+  console.log("Rendering ServerList with:", { 
+    serversCount: servers.length,
+    activeServerId
+  });
+  
+  // Use useCallback to ensure stable render
+  const renderServerItem = useCallback((server: any) => (
+    <div key={server.id} className="server-item">
+      <Link 
+        href={`/app/${server.id}`}
+        scroll={false}
+        shallow={true}
+      >
+        <div className={`server-icon ${server.id === activeServerId ? 'active' : ''}`}>
+          <Image
+            src={server.iconUrl || "/defaultServerIcon.png"}
+            alt={server.name}
+            width={48}
+            height={48}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            unoptimized={!server.iconUrl?.includes("cdn.discordapp.com")}
+            priority={server.id === activeServerId}
+          />
+          {server.id === activeServerId && (
+            <div className="server-indicator" />
+          )}
+        </div>
+      </Link>
+    </div>
+  ), [activeServerId]);
 
   return (
     <>
-      <div
-        id="serverList"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          height: "100vh",
-          width: "72px",
-          background: "#1e1f22",
-          borderRadius: "0",
-          margin: "0",
-          padding: "12px 0",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "8px",
-          overflowY: "auto",
-          zIndex: 1,
-          scrollbarWidth: "thin",
-          scrollbarColor: "#202225 transparent",
-          msOverflowStyle: "none",
-        }}
-        className="hide-scrollbar"
-      >
+      <div id="serverList" className="server-list thin-scrollbar hide-scrollbar">
         {/* Home Button */}
-        <div style={{ marginBottom: "8px" }}>
-          <Link href="/app">
-            <div
-              style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: "#36393f",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              cursor: "pointer",
-              }}
-            >
+        <div className="server-item">
+          <Link 
+            href="/app"
+            scroll={false}
+            shallow={true}
+          >
+            <div className="server-icon">
                 <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={24}
@@ -134,65 +65,11 @@ export default function ServerList() {
         </div>
 
         {/* Server divider */}
-        <div
-          style={{
-            width: "32px",
-            height: "2px",
-            background: "#36393f",
-            borderRadius: "1px",
-            margin: "4px 0",
-          }}
-        />
+        <div className="server-divider" />
 
         {/* Server icons */}
-        {Array.isArray(servers) && servers.map((server) => (
-          <div
-            key={server.id}
-            style={{
-              marginBottom: "8px",
-            }}
-          >
-            <Link href={`/app/${server.id}`}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: server.id === activeServerId ? "16px" : "50%", // Circle for inactive, rounded square for active
-                  background: "#36393f",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  transition: "border-radius 0.2s ease",
-                }}
-              >
-                <Image
-                  src={server.iconUrl || "/defaultServerIcon.png"}
-                  alt={server.name}
-                  width={48}
-                  height={48}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  unoptimized={!server.iconUrl?.includes("cdn.discordapp.com")}
-                />
-                {server.id === activeServerId && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: "-12px",
-                      width: "8px",
-                      height: "40px",
-                      background: "white",
-                      borderRadius: "0 4px 4px 0",
-                    }}
-                  />
-                )}
-              </div>
-            </Link>
-          </div>
-        ))}
+        {Array.isArray(servers) && servers.map(renderServerItem)}
       </div>
     </>
   );
-}
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { memo } from "react";
 
 const members = {
   roles: [
@@ -17,7 +18,7 @@ const members = {
   ]
 };
 
-export default function MemberList() {
+export default memo(function MemberList() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "online": return "#43b581";
@@ -29,60 +30,20 @@ export default function MemberList() {
   };
 
   return (
-    <div
-      id="memberList"
-      style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        width: "240px",
-        height: "100vh",
-        background: "#2b2d31",
-        borderLeft: "1px solid #232428",
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px 0",
-        overflowY: "auto",
-      }}
-    >
+    <div id="memberList" className="member-list-container thin-scrollbar">
+      <div className="role-header">
+        Members — {members.roles.reduce((total, role) => total + role.members.length, 0)}
+      </div>
+      
       {members.roles.map((role) => (
         <div key={role.id}>
-          <div
-            style={{
-              padding: "16px 16px 4px 16px",
-              color: "#96989d",
-              fontSize: "12px",
-              fontWeight: "bold",
-            }}
-          >
+          <div className="role-header">
             <span style={{ color: role.color }}>{role.name}</span> — {role.members.length}
           </div>
           {role.members.map((member) => (
-            <div
-              key={member.id}
-              style={{
-                padding: "4px 16px",
-                color: "white",
-                fontSize: "14px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ position: "relative" }}>
-                <div
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    backgroundColor: "#36393f",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+            <div key={member.id} className="member-item">
+              <div className="member-avatar">
+                <div className="avatar-container">
                   <Image
                     src={member.avatar}
                     alt={member.name}
@@ -91,16 +52,7 @@ export default function MemberList() {
                   />
                 </div>
                 <div
-                  style={{
-                    position: "absolute",
-                    bottom: "-2px",
-                    right: "-2px",
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    backgroundColor: getStatusColor(member.status),
-                    border: "2px solid #2b2d31",
-                  }}
+                  className={`status-indicator status-${member.status}`}
                 />
               </div>
               <span>{member.name}</span>
@@ -110,4 +62,4 @@ export default function MemberList() {
       ))}
     </div>
   );
-}
+});

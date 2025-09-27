@@ -1,19 +1,8 @@
 "use client";
 
-import ServerList from '../components/ServerList';
-import ChannelList from '../components/ChannelList';
 import ChatArea from '../components/ChatArea';
-import MemberList from '../components/MemberList';
 
+// This component only renders the ChatArea since the rest is in MainLayout
 export default function Discord() {
-
-
-  return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
-      <ServerList />
-      <ChannelList />
-      <ChatArea />
-      <MemberList />
-    </div>
-  );
+  return <ChatArea />;
 }
