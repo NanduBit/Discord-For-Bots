@@ -5,32 +5,33 @@ import { useRouter } from "next/navigation";
 
 export default function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token exists in localStorage
-    const token = localStorage.getItem("token");
+    // Check if token exists in localStorage silently in the background
+    // without affecting the UI or showing any loading indicators
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+          console.log("No authentication token found, redirecting to login");
+          router.replace("/login");
+          return;
+        }
+        
+        // Optional: Silently verify the token validity with Discord API
+        // This could be added later without disrupting the UI
+      } catch (error) {
+        console.error("Auth check error:", error);
+        router.replace("/login");
+      }
+    };
     
-    if (!token) {
-      // Redirect to login if no token found
-      router.replace("/login");
-    } else {
-      setIsAuthenticated(true);
-    }
-    
-    setIsLoading(false);
+    // Run the authentication check
+    checkAuth();
   }, [router]);
 
-  // Show nothing while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="text-slate-100">Loading...</div>
-      </div>
-    );
-  }
-
-  // Only render children if authenticated
-  return isAuthenticated ? <>{children}</> : null;
+  // Immediately render children without waiting for auth check
+  // The redirection will happen in the background if needed
+  return <>{children}</>;
 }

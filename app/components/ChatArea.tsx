@@ -1323,48 +1323,81 @@ export default function ChatArea() {
     }
   }, [guildId, channelId]);
 
+  // Keep track of previous channel/guild to optimize loading
+  const [prevGuildId, setPrevGuildId] = useState("");
+  const [prevChannelId, setPrevChannelId] = useState("");
+  
   // Fetch chats in useEffect to ensure it only runs on the client
   useEffect(() => {
     if (guildId && channelId) {
+      // Don't clear messages immediately to avoid UI flash
       setIsLoading(true);
+      
       const token = localStorage.getItem("token");
       
-      fetch(`/api/guilds/${guildId}/channels/${channelId}/chats`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token }),
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data && Array.isArray(data)) {
-          // Sort messages by timestamp (oldest first)
-          const sortedMessages = [...data].sort((a, b) => 
-            parseInt(a.id) - parseInt(b.id)
-          );
-          setMessages(sortedMessages);
-        } else {
-          // If data is not in expected format
-          console.warn("API response is not in the expected format:", data);
+      // Check if we're just reloading the same channel
+      const isSameChannel = prevGuildId === guildId && prevChannelId === channelId;
+      
+      // Update these for next comparison
+      setPrevGuildId(guildId);
+      setPrevChannelId(channelId);
+      
+      // Add a slight delay to prevent UI jank when switching channels quickly
+      // Make delay shorter for same channel refreshes
+      const fetchTimer = setTimeout(() => {
+        fetch(`/api/guilds/${guildId}/channels/${channelId}/chats`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+          // Prevent caching to ensure fresh data
+          cache: 'no-store',
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data && Array.isArray(data)) {
+            // Filter for unique message IDs (in case API returns duplicates)
+            const uniqueMessages = data.reduce((acc: Message[], message: Message) => {
+              // Only add messages that don't already exist in the accumulator
+              if (!acc.some(m => m.id === message.id)) {
+                acc.push(message);
+              }
+              return acc;
+            }, []);
+            
+            // Sort messages by timestamp (oldest first)
+            const sortedMessages = [...uniqueMessages].sort((a, b) => 
+              parseInt(a.id) - parseInt(b.id)
+            );
+            setMessages(sortedMessages);
+          } else {
+            // If data is not in expected format
+            console.warn("API response is not in the expected format:", data);
+            setMessages([]);
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching messages:", error);
           setMessages([]);
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching messages:", error);
-        setMessages([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+        })
+        .finally(() => {
+          // Short fade-in animation duration
+          setIsLoading(false);
+        });
+      }, isSameChannel ? 100 : 200); // Shorter delay for better experience
+      
+      // Clean up the timeout if component unmounts or dependencies change
+      return () => clearTimeout(fetchTimer);
     } else {
       // Reset messages when no channel is selected
       setMessages([]);
+      setIsLoading(false);
     }
   }, [guildId, channelId]);
 
@@ -1385,8 +1418,20 @@ export default function ChatArea() {
       if (newMessage && newMessage.channel_id === channelId) {
         console.log("Adding new WebSocket message to chat:", newMessage);
         
-        // Add the new message to the messages array
-        setMessages(prevMessages => [...prevMessages, newMessage]);
+        // Add the new message to the messages array, ensuring no duplicates by ID
+        setMessages(prevMessages => {
+          // Check if a message with this ID already exists
+          const messageExists = prevMessages.some(msg => msg.id === newMessage.id);
+          
+          // If it exists, don't add it again
+          if (messageExists) {
+            console.log(`Message with ID ${newMessage.id} already exists, skipping`);
+            return prevMessages;
+          }
+          
+          // Otherwise, add the new message
+          return [...prevMessages, newMessage];
+        });
       }
     };
     
@@ -1401,145 +1446,53 @@ export default function ChatArea() {
   
   return (
     <>
-      <div
-        id="chatArea"
-        style={{
-        position: "fixed",
-        top: 0,
-        left: "312px", /* 72px (server list) + 240px (channel list) */
-        right: "240px", /* Member list width */
-        height: "100vh",
-        background: "#313338",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+      <div id="chatArea" className="chat-area">
       {/* Chat header */}
-      <div
-        style={{
-          height: "48px",
-          borderBottom: "1px solid #232428",
-          padding: "0 16px",
-          display: "flex",
-          alignItems: "center",
-          color: "white",
-          fontWeight: "bold",
-        }}
-      >
+      <div className="chat-header">
         {channelId ? `# ${channelName || 'loading...'}` : "Discord for Bots"}
+        {isLoading && (
+          <div className="chat-loading-indicator" />
+        )}
       </div>
 
       {/* Messages area */}
-      <div
+      <div 
+        className={`messages-container thin-scrollbar`}
         style={{
-          flex: 1,
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: !channelId || isLoading || messages.length === 0 ? "center" : "flex-start",
-          alignItems: !channelId || isLoading || messages.length === 0 ? "center" : "stretch",
-          overflowY: "auto",
-          maxHeight: "calc(100vh - 48px - 76px)", /* Subtract header height and message input height */
-          overflowX: "hidden",
-          scrollbarWidth: "thin",
-          scrollbarColor: "#202225 transparent",
+          justifyContent: !channelId || (!isLoading && messages.length === 0) ? "center" : "flex-start",
+          alignItems: !channelId || (!isLoading && messages.length === 0) ? "center" : "stretch",
+          transition: "opacity 0.2s ease-in-out, transform 0.2s ease-in-out",
+          opacity: isLoading && messages.length === 0 ? "0.7" : "1",
+          transform: isLoading && messages.length === 0 ? "translateY(10px)" : "translateY(0)"
         }}
       >
         {!channelId ? (
-          <div
-            style={{
-              color: "#96989d",
-              fontSize: "16px",
-              textAlign: "center",
-              padding: "20px",
-              background: "#383a40",
-              borderRadius: "8px",
-              maxWidth: "400px",
-              margin: "0 auto",
-            }}
-          >
+          <div className="message-placeholder">
             Please select a channel to start chatting
           </div>
-        ) : isLoading ? (
-          <div
-            style={{
-              color: "#96989d",
-              fontSize: "16px",
-              textAlign: "center",
-              padding: "20px",
-              background: "#383a40",
-              borderRadius: "8px",
-              maxWidth: "400px",
-              margin: "0 auto",
-            }}
-          >
-            Loading messages...
-          </div>
-        ) : messages.length === 0 ? (
-          <div
-            style={{
-              color: "#96989d",
-              fontSize: "16px",
-              textAlign: "center",
-              padding: "20px",
-              background: "#383a40",
-              borderRadius: "8px",
-              maxWidth: "400px",
-              margin: "0 auto",
-            }}
-          >
+        ) : !isLoading && messages.length === 0 ? (
+          <div className="message-placeholder">
             No messages in this channel. Be the first to say something!
           </div>
         ) : (
-          // Only render messages when they exist
+          // Always render messages, even when loading
           messages.map((message: Message) => (
-          <div
-            key={message.id}
-            style={{
-              marginBottom: "16px",
-              display: "flex",
-              flexDirection: "column",
-              padding: "8px",
-              borderRadius: "4px",
-              backgroundColor: message.author.bot ? "rgba(78, 80, 88, 0.1)" : "transparent",
-            }}
-          >
+            <div
+              key={message.id}
+              className={`message ${message.author.bot ? 'message-bot' : ''}`}
+            >
             {/* Reply reference - styled to match Discord screenshot */}
             {message.referenced_message && (
               <>
-                <div 
-                  style={{
-                    display: "flex",
-                    marginBottom: "0px",
-                    paddingLeft: "0px"
-                  }}
-                >
-                  <div style={{ 
-                    paddingRight: "7px",
-                    paddingTop: "2px",
-                  }}>
+                <div className="message-reference">
+                  <div style={{ paddingRight: "7px", paddingTop: "2px" }}>
                     <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: "#4f545c" }}>
                       <path d="M0.5 3L6 8.5L11.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <div 
-                    style={{ 
-                      borderLeft: "2px solid #4f545c", 
-                      paddingLeft: "8px",
-                      color: "#b5bac1",
-                      fontSize: "0.8125rem",
-                      marginBottom: "2px"
-                    }}
-                  >
-                    <span style={{ 
-                      color: "#b5bac1", 
-                      fontWeight: "400",
-                    }}>
-                      <span style={{
-                        color: "#00a8fc",
-                        fontWeight: "500",
-                      }}>
+                  <div className="reference-content">
+                    <span>
+                      <span style={{ color: "#00a8fc", fontWeight: "500" }}>
                         @{message.referenced_message.author.username}
                       </span>
                       {' '}<span dangerouslySetInnerHTML={{ __html: parseDiscordMarkdown(message.referenced_message.content) }} />
@@ -1550,33 +1503,14 @@ export default function ChatArea() {
             )}
             
             {/* Main message content */}
-            <div
-              style={{
-                display: "flex",
-                gap: "15px",
-              }}
-            >
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  backgroundColor: "#36393f",
-                  position: "relative",
-                  marginTop: "2px"
-                }}
-              >
+            <div className="message-content">
+              <div className="user-avatar">
                 <Image
                   src={`https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}.webp`}
                   alt={message.author.username || message.author.global_name || "User"}
                   width={40}
                   height={40}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover"
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={(e) => {
                     // If avatar loading fails, use a default avatar
                     const target = e.target as HTMLImageElement;
@@ -1585,33 +1519,17 @@ export default function ChatArea() {
                   unoptimized={true}
                 />
               </div>
-              <div style={{ flex: 1, maxWidth: "calc(100% - 56px)" }}>
-                <div style={{ marginBottom: "2px", display: "flex", alignItems: "baseline" }}>
-                  <span
-                    style={{
-                      color: "#f2f3f5",
-                      fontWeight: "500",
-                      marginRight: "6px",
-                      fontSize: "1rem"
-                    }}
-                  >
+              <div className="message-body">
+                <div className="message-header">
+                  <span className="user-name">
                     {message.author.global_name || message.author.username}
                   </span>
                   {message.author.bot && (
-                    <span style={{ 
-                      background: "#5865f2",
-                      color: "white", 
-                      fontSize: "0.65rem", 
-                      fontWeight: "500",
-                      padding: "0px 4px",
-                      borderRadius: "3px",
-                      marginRight: "6px",
-                      textTransform: "uppercase"
-                    }}>
+                    <span className="bot-tag">
                       Bot
                     </span>
                   )}
-                  <span style={{ color: "#b5bac1", fontSize: "0.75rem" }}>
+                  <span className="timestamp">
                     {message.timestamp && new Date(message.timestamp).toLocaleString(undefined, {
                       month: 'short',
                       day: 'numeric',
@@ -1620,7 +1538,7 @@ export default function ChatArea() {
                     })}
                   </span>
                 </div>
-                <div style={{ color: "#dbdee1", fontSize: "0.9375rem" }}>
+                <div className="message-text">
                   {/* If it's a URL-only message that has embeds, don't show the URL to prevent duplication */}
                   {message.content ? 
                     (() => {
@@ -1657,11 +1575,7 @@ export default function ChatArea() {
 
       {/* Message input - only show when a channel is selected */}
       {channelId && (
-        <div
-          style={{
-            margin: "0 16px 24px 16px",
-          }}
-        >
+        <div className="input-container">
           <form 
             onSubmit={(e) => {
               e.preventDefault();
@@ -1671,44 +1585,18 @@ export default function ChatArea() {
                 messageInput.value = '';
               }
             }}
-            style={{
-              borderRadius: "8px",
-              background: "#383a40",
-              padding: "12px",
-              display: "flex",
-              alignItems: "center",
-              position: "relative",
-              border: `1px solid ${isSending ? "#5865f2" : "transparent"}`,
-              transition: "border-color 0.2s ease",
-            }}
+            className={`message-form ${isSending ? 'sending' : ''}`}
           >
             {isSending && (
-              <div style={{
-                position: "absolute",
-                top: "0",
-                left: "0",
-                height: "2px",
-                background: "#5865f2",
-                animation: "progress 2s infinite linear",
-                width: "50%",
-                borderTopLeftRadius: "8px",
-              }} />
+              <div className="loading-indicator" />
             )}
             <input 
               type="text"
               placeholder={isSending ? "Sending..." : `Message #${channelName || 'channel'}`}
               disabled={isSending}
               autoComplete="off"
-              style={{
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                color: "white",
-                fontSize: "0.9375rem",
-                width: "100%",
-                padding: "0",
-                opacity: isSending ? 0.7 : 1,
-              }}
+              className="message-input"
+              style={{ opacity: isSending ? 0.7 : 1 }}
               onKeyDown={(e) => {
                 // Submit on Enter key press (without shift key for newline)
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1725,18 +1613,7 @@ export default function ChatArea() {
             <button
               type="submit"
               disabled={isSending}
-              style={{
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                cursor: isSending ? "not-allowed" : "pointer",
-                padding: "0 0 0 10px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#96989d",
-                transition: "color 0.2s ease",
-              }}
+              className={`send-button ${isSending ? 'send-button-sending' : ''}`}
               aria-label="Send message"
             >
               <svg 
@@ -1749,7 +1626,6 @@ export default function ChatArea() {
                 strokeWidth="2" 
                 strokeLinecap="round" 
                 strokeLinejoin="round"
-                style={{ color: isSending ? "#5865f2" : "#96989d" }}
               >
                 <path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"/>
                 <path d="M6 12h16"/>

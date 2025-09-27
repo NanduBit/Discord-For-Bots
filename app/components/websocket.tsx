@@ -111,8 +111,12 @@ export default function DiscordListener() {
         }
       };
 
-      ws.onerror = (error) => {
-        console.error("Discord WebSocket error:", error);
+      ws.onerror = (event) => {
+        // Browser WebSocket error events don't provide detailed information due to security restrictions
+        // Only log a simplified message in development to avoid console noise
+        if (process.env.NODE_ENV === 'development') {
+          console.debug("Discord WebSocket connection issue detected - will attempt to reconnect automatically");
+        }
       };
     };
     
