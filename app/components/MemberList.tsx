@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { memo } from "react";
 
 const members = {
   roles: [
@@ -17,7 +18,7 @@ const members = {
   ]
 };
 
-export default function MemberList() {
+export default memo(function MemberList() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "online": return "#43b581";
@@ -29,7 +30,11 @@ export default function MemberList() {
   };
 
   return (
-    <div id="memberList" className="member-list thin-scrollbar">
+    <div id="memberList" className="member-list-container thin-scrollbar">
+      <div className="role-header">
+        Members — {members.roles.reduce((total, role) => total + role.members.length, 0)}
+      </div>
+      
       {members.roles.map((role) => (
         <div key={role.id}>
           <div className="role-header">
@@ -57,4 +62,4 @@ export default function MemberList() {
       ))}
     </div>
   );
-}
+});

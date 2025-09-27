@@ -110,21 +110,12 @@ body {
 
 /* ServerList component styles */
 .server-list {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 72px;
-  background: var(--discord-dark-tertiary);
-  border-radius: 0;
-  margin: 0;
   padding: 12px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   overflow-y: auto;
-  z-index: 1;
 }
 
 .server-item {
@@ -173,18 +164,14 @@ body {
 
 /* ChannelList component styles */
 .channel-list-container {
-  position: fixed;
-  top: 0;
-  left: 72px;
-  height: 100vh;
-  width: 240px;
+  height: 100%;
+  width: 100%;
   background: var(--discord-dark-secondary);
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  z-index: 1;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -286,12 +273,9 @@ body {
 }
 
 /* MemberList component styles */
-.member-list {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 240px;
-  height: 100vh;
+.member-list-container {
+  height: 100%;
+  width: 100%;
   background: var(--discord-dark-secondary);
   border-left: 1px solid var(--discord-border-color);
   display: flex;
@@ -360,11 +344,6 @@ body {
 
 /* ChatArea component styles */
 .chat-area {
-  position: fixed;
-  top: 0;
-  left: 312px; /* 72px (server list) + 240px (channel list) */
-  right: 240px; /* Member list width */
-  height: 100vh;
   background: var(--discord-dark-primary);
   display: flex;
   flex-direction: column;

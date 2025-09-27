@@ -1,0 +1,308 @@
+/* Mobile-compatible UI for Discord-For-Bots
+ * Simple, reliable responsive design that works on all devices
+ */
+
+/* Basic layout structure */
+.main-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--discord-dark-primary);
+}
+
+/* Mobile navigation bar - only visible on mobile */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background-color: var(--discord-dark-primary);
+  z-index: 1000;
+  border-bottom: 1px solid var(--discord-border-color);
+  padding: 0 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-title {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  text-align: center;
+  flex: 1;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+}
+
+.nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-close {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.channel-toggle {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Sidebar base styles */
+.sidebar {
+  position: fixed;
+  height: 100%;
+  z-index: 100;
+  transition: transform 0.3s ease-in-out, opacity 0.2s ease;
+}
+
+/* Server list */
+.sidebar.server-list {
+  width: 72px;
+  left: 0;
+  background: var(--discord-dark-tertiary);
+  z-index: 200;
+}
+
+/* Channel list */
+.sidebar.channel-list {
+  width: 240px;
+  left: 72px;
+  background: var(--discord-dark-secondary);
+  z-index: 150;
+}
+
+/* Member list */
+.sidebar.member-list {
+  width: 240px;
+  right: 0;
+  background: var(--discord-dark-secondary);
+  border-left: 1px solid var(--discord-border-color);
+  z-index: 100;
+}
+
+/* Chat area */
+.chat-area {
+  position: fixed;
+  left: 312px; /* 72px + 240px */
+  right: 240px;
+  height: 100%;
+  background: var(--discord-dark-primary);
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Overlay for closing mobile sidebars */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  /* Hide member list by default on medium screens */
+  .sidebar.member-list {
+    transform: translateX(100%);
+  }
+  
+  .chat-area {
+    right: 0;
+  }
+  
+  /* Show member list when active */
+  .sidebar.member-list.active {
+    transform: translateX(0);
+  }
+}
+
+/* Mobile layout (smaller screens) */
+@media (max-width: 768px) {
+  /* Show mobile navigation */
+  .mobile-nav {
+    display: flex;
+    z-index: 1000;
+  }
+  
+  /* Adjust content to account for mobile nav */
+  .content-area {
+    padding-top: 48px;
+  }
+  
+  /* Hide all sidebars by default */
+  .sidebar {
+    transform: translateX(-100%);
+    top: 48px;
+    height: calc(100% - 48px);
+  }
+  
+  .sidebar.server-list {
+    width: 80px;
+    z-index: 200;
+  }
+  
+  .sidebar.channel-list {
+    width: 100%;
+    max-width: 300px;
+    left: 0;
+    z-index: 150;
+  }
+  
+  .sidebar.member-list {
+    transform: translateX(100%);
+    width: 100%;
+    max-width: 300px;
+    z-index: 150;
+  }
+  
+  /* Show sidebars when active */
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  /* Chat area takes full width */
+  .chat-area {
+    left: 0;
+    right: 0;
+    top: 48px;
+    height: calc(100% - 48px);
+    z-index: 50;
+  }
+  
+  /* Show sidebar overlay when a sidebar is active */
+  .sidebar-active .sidebar-overlay {
+    display: block;
+  }
+  
+  /* Show mobile close button */
+  .sidebar.active .mobile-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Show channel toggle button */
+  .channel-toggle {
+    display: block;
+  }
+}
+
+/* Small screens (phones) */
+@media (max-width: 480px) {
+  .sidebar.channel-list,
+  .sidebar.member-list {
+    width: 85%;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .mobile-nav {
+    display: flex;
+  }
+
+  /* Sidebars off-screen by default on mobile */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.member-list {
+    transform: translateX(100%);
+  }
+  
+  /* Show sidebar when active */
+  .sidebar.show {
+    transform: translateX(0) !important;
+  }
+  
+  /* Chat area takes full width */
+  .chat-area {
+    left: 0;
+    right: 0;
+    top: 48px; /* Below mobile nav */
+    height: calc(100% - 48px);
+  }
+  
+  /* Adjust message input area for mobile */
+  .input-container {
+    margin: 0 8px 16px 8px;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Server and channel list visible, but member list hidden */
+  .sidebar.member-list {
+    transform: translateX(100%);
+  }
+  
+  .sidebar.member-list.show {
+    transform: translateX(0);
+  }
+  
+  /* Chat area doesn't include member list space */
+  .chat-area {
+    right: 0;
+  }
+}
+
+/* Overlay for mobile - only appears when sidebar is shown */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.show + .sidebar-overlay {
+  display: block;
+  opacity: 1;
+}
