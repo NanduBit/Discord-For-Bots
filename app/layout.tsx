@@ -15,11 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Discord For Bots",
   description: "Login into your discord bot account with just the token.",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
